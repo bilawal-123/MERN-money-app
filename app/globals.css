@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+select {
+  height: 37.42px;
+}
+.label-style {
+  @apply capitalize font-bold text-sm mb-1 text-slate-500 flex;
+}
+.heading1 {
+  @apply font-sans capitalize font-bold text-lg mb-2 text-slate-600 flex;
+}
+.heading2 {
+  @apply font-sans capitalize font-bold border-b pb-1 border-teal-700 text-teal-700 flex mb-4;
+}
+.heading3 {
+  @apply font-sans capitalize font-bold text-sm border-b pb-1 border-slate-600 mb-4 mt-3 text-slate-600 flex;
+}
+.input-style {
+  @apply block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700;
+}
+.asterisk {
+  @apply text-red-600 text-lg leading-4 ml-1;
+}
+.button-style {
+  @apply inline-flex gap-1 items-center  bg-green-500 text-xs font-bold min-h-8 px-3 py-1 text-white rounded hover:bg-green-600 hover:transition-all hover:duration-300;
+}
+.button-style-icon {
+  @apply bg-green-500 hover:bg-green-600 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-white rounded  hover:transition-all hover:duration-300;
+}
+.button-black {
+  @apply inline-flex gap-1 items-center  bg-gray-500 text-xs font-bold min-h-8 px-3 py-1 text-white rounded hover:bg-gray-600 hover:transition-all hover:duration-300;
+}
+.button-edit {
+  @apply inline-flex gap-1 items-center bg-purple-500 text-xs font-bold min-h-8 px-3 py-1 text-white rounded hover:bg-purple-800 hover:transition-all hover:duration-300;
+}
+.button-edit-icon {
+  @apply bg-purple-500 hover:bg-purple-800 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-white rounded  hover:transition-all hover:duration-300;
+}
+
+.button-delete {
+  @apply inline-flex gap-1 items-center bg-red-400 text-xs font-bold min-h-8 px-3 py-1 text-white rounded hover:bg-red-500 hover:transition-all hover:duration-300;
+}
+.button-delete-icon {
+  @apply bg-red-400 hover:bg-red-500 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-white rounded  hover:transition-all hover:duration-300;
+}
+.button-view-icon {
+  @apply bg-blue-700 hover:bg-blue-900 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-white rounded  hover:transition-all hover:duration-300;
+}
+
+.button-default {
+  @apply inline-flex gap-1 items-center  border-2 border-gray-200 bg-gray-50 text-xs font-bold min-h-8 px-3 py-1 text-black rounded hover:bg-gray-300 hover:transition-all hover:duration-300;
+}
+.box-style {
+  @apply bg-white shadow-md p-5 border border-gray-200 mb-8;
+}
+
+main > div {
+  @apply py-4 px-4 sm:px-8 sm:py-8 bg-white shadow-2xl w-[1200px] max-w-full mx-auto z-10;
+}
+nav,
+footer {
+  @apply z-10;
+}
+.nav-link-style {
+  @apply flex items-center space-x-1 sm:space-x-2 text-gray-50;
+}
+.nav-link-icon-style {
+  @apply text-yellow-200 text-2xl;
+}
+.page-header-group {
+  @apply my-2 flex justify-between items-center sm:flex-row flex-col;
+}
+.personal-detail-box {
+  @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4  gap-3;
+}
+.view-member-row {
+  @apply flex justify-between items-center border-b border-gray-300 flex-wrap;
+}
+/* .Toastify__toast-container {
+  z-index: 99999 !important;
+} */

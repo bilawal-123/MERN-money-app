@@ -1,0 +1,22 @@
+/* Reset some styles for printing */
+
+/* Apply styles for the print preview */
+@media print {
+  /* Set custom page size if needed */
+  body,
+  html {
+    height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+  }
+  @page {
+    /* size: 76.2mm; */
+    /* margin: 0; */
+  }
+
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+}
