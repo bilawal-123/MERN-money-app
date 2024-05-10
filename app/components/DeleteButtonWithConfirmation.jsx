@@ -3,7 +3,12 @@ import { TbTrash } from "react-icons/tb";
 import Toast from "./Toast";
 import { LiaTimesSolid } from "react-icons/lia";
 
-const DeleteButtonWithConfirmation = ({ onDelete, className, text }) => {
+const DeleteButtonWithConfirmation = ({
+  onDelete,
+  className,
+  text,
+  showButton,
+}) => {
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   const handleConfirm = () => {
@@ -17,10 +22,12 @@ const DeleteButtonWithConfirmation = ({ onDelete, className, text }) => {
 
   return (
     <div className="">
-      <button onClick={() => setShowConfirmation(true)} className={className}>
-        <TbTrash className="" />
-        {text}
-      </button>
+      {showButton && (
+        <button onClick={() => setShowConfirmation(true)} className={className}>
+          <TbTrash className="" />
+          {text}
+        </button>
+      )}
       {showConfirmation && (
         <div className="z-10 absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
           <div className="bg-white px-8 pb-8 rounded-lg relative">

@@ -199,6 +199,7 @@ const OrdersList = ({ customerId }) => {
               onDelete={() => handleDelete(row.original.id)}
               className="button-delete-icon" // Provide the class for styling
               text="" // Provide text to display alongside the icon
+              showButton={authUser && authUser.username === "Admin"}
             />
 
             <ImageUploadModal

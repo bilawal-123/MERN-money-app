@@ -33,7 +33,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
 import { TiArrowSortedDown, TiArrowSortedUp, TiPlus } from "react-icons/ti";
 import DeleteButtonWithConfirmation from "./DeleteButtonWithConfirmation";
-export default function MemberList() {
+export default function Shopkeepers() {
   const { authUser, isLoading } = useAuth();
   const router = useRouter();
   const [membersList, setMembersList] = useState([]);
