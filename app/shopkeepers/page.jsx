@@ -8,7 +8,6 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../firebase/auth";
 import { useRouter } from "next/navigation";
-import Loader from "./loader";
 import {
   collection,
   getDocs,
@@ -32,7 +31,8 @@ import {
 import "react-toastify/dist/ReactToastify.css";
 import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
 import { TiArrowSortedDown, TiArrowSortedUp, TiPlus } from "react-icons/ti";
-import DeleteButtonWithConfirmation from "./DeleteButtonWithConfirmation";
+import Loader from "../components/loader";
+import DeleteButtonWithConfirmation from "../components/DeleteButtonWithConfirmation";
 export default function Shopkeepers() {
   const { authUser, isLoading } = useAuth();
   const router = useRouter();
