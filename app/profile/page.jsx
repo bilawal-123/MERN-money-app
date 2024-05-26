@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { auth } from "@/firebase/firebase";
+import { auth } from "../../firebase/firebase";
 import { updateProfile } from "firebase/auth";
 
 export default function ProfileUpdate() {

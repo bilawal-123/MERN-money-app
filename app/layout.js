@@ -1,11 +1,15 @@
 "use client";
-import { Montserrat } from "next/font/google";
+import { Montserrat, Gulzar } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
-import { AuthUserProvider } from "@/firebase/auth";
+import { AuthUserProvider } from "../firebase/auth";
 import Footer from "./components/footer";
 import { BalanceProvider } from "./components/BalanceContext";
 const inter = Montserrat({ subsets: ["latin"] });
+const gulzar = Gulzar({
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export default function RootLayout({ children }) {
   return (

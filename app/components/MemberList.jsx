@@ -1,10 +1,4 @@
 "use client";
-import {
-  useTable,
-  useSortBy,
-  usePagination,
-  useGlobalFilter,
-} from "react-table";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../firebase/auth";
 import { useRouter } from "next/navigation";
@@ -17,31 +11,39 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import Link from "next/link";
 import { ToastContainer, toast } from "react-toastify";
-import {
-  TbX,
-  TbSearch,
-  TbPencil,
-  TbEye,
-  TbTrash,
-  TbListSearch,
-  TbHourglass,
-} from "react-icons/tb";
+import { TbPencil, TbEye, TbTrash } from "react-icons/tb";
 import "react-toastify/dist/ReactToastify.css";
-import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
-import { TiArrowSortedDown, TiArrowSortedUp, TiPlus } from "react-icons/ti";
+import { TiPlus } from "react-icons/ti";
 import DeleteButtonWithConfirmation from "./DeleteButtonWithConfirmation";
-export default function MemberList() {
+import SearchInput from "./SearchInputMembersList";
+import PaginationMembersList from "./PaginationMembersList";
+import PriceCard from "./PriceCard";
+import { FaFilter, FaRegDotCircle, FaRegUserCircle } from "react-icons/fa";
+import { AiOutlineExclamationCircle } from "react-icons/ai";
+import { MdOutlineDateRange, MdOutlineLocationOn } from "react-icons/md";
+import { FaRegCircle } from "react-icons/fa6";
+import { CiShop } from "react-icons/ci";
+import { PiUserListBold } from "react-icons/pi";
+export default function MemberList({ memberType }) {
   const { authUser, isLoading } = useAuth();
   const router = useRouter();
   const [membersList, setMembersList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
+
   const [noRecordsFound, setNoRecordsFound] = useState(false);
-  const [searchInput, setSearchInput] = useState("");
-  const [balances, setBalances] = useState({});
   const [isDataFetched, setIsDataFetched] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCashBalance, setTotalCashBalance] = useState(0);
+  const [totalCreditBalance, setTotalCreditBalance] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [sortBy, setSortBy] = useState("mostRecent");
+  const [filterOption, setFilterOption] = useState("all");
+  const [hideZeroAmount, setHideZeroAmount] = useState(false);
+
   useEffect(() => {
     if (!isLoading && !authUser) {
       router.push("/userLogin");
@@ -56,9 +58,15 @@ export default function MemberList() {
       console.error("No UID found for the user.");
       return;
     }
-    const q = query(collection(db, "members"));
+
+    let memberQuery = collection(db, "members");
+
+    if (memberType) {
+      memberQuery = query(memberQuery, where("type", "==", memberType));
+    }
+
     try {
-      const querySnapshot = await getDocs(q);
+      const querySnapshot = await getDocs(memberQuery);
       if (querySnapshot.empty) {
         setNoRecordsFound(true);
         setMembersList([]);
@@ -66,20 +74,19 @@ export default function MemberList() {
       }
 
       let members = [];
-      let balanceData = {}; // Object to store balances for each customer
-
-      // Loop through each member to fetch their orders and calculate balances
+      let cashData = {};
+      let creditData = {};
+      let totalCashSum = 0;
+      let totalCreditSum = 0;
       for (const doc of querySnapshot.docs) {
         const memberData = { ...doc.data(), id: doc.id };
 
-        // Fetch orders for the current member
         const orderQuery = query(
           collection(db, "orders"),
           where("customerId", "==", memberData.id)
         );
         const orderSnapshot = await getDocs(orderQuery);
 
-        // Calculate total cash and total credit orders for the current member
         let totalCash = 0;
         let totalCredit = 0;
         orderSnapshot.forEach((orderDoc) => {
@@ -88,19 +95,23 @@ export default function MemberList() {
           totalCredit += orderData.credit || 0;
         });
 
-        // Calculate the balance for the current member
-        const balance = totalCash - totalCredit;
+        cashData[memberData.id] = totalCash;
+        creditData[memberData.id] = totalCredit;
 
-        // Store balance for the current member in the balanceData object
-        balanceData[memberData.id] = balance;
-
-        // Add balance to member data
-        memberData.balance = balance;
+        memberData.totalCash = totalCash;
+        memberData.totalCredit = totalCredit;
         members.push(memberData);
+
+        totalCashSum += totalCash;
+        totalCreditSum += totalCredit;
       }
 
-      // Set the balances state with the balanceData object
-      setBalances(balanceData);
+      console.log("Members fetched:", members); // Debugging log
+      console.log("Total cash sum:", totalCashSum); // Debugging log
+      console.log("Total credit sum:", totalCreditSum); // Debugging log
+
+      setTotalCashBalance(totalCashSum);
+      setTotalCreditBalance(totalCreditSum);
 
       setMembersList(members);
       setNoRecordsFound(members.length === 0);
@@ -113,11 +124,11 @@ export default function MemberList() {
       );
     }
   };
+
   const deleteMember = async (docId) => {
     try {
       await deleteDoc(doc(db, "members", docId));
-
-      fetchMembers(authUser.uid); // Refresh the list
+      fetchMembers(authUser.uid);
       toast.success("Member deleted successfully!");
     } catch (error) {
       console.error("Error deleting member:", error);
@@ -125,296 +136,487 @@ export default function MemberList() {
     }
   };
 
-  const handleSearch = async (e) => {
+  // const handleFilterChange = (e) => {
+  //   const selectedFilterOption = e.target.value;
+  //   setFilterOption(selectedFilterOption);
+  // };
+
+  const handleSearch = (e) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
+  };
 
-    if (!query) {
-      fetchMembers(authUser.uid);
-      return;
+  const handleClearFilters = () => {
+    setFilterOption("all");
+    setHideZeroAmount(false);
+    setSortBy("mostRecent");
+    setIsDropdownOpen((prevIsDropdownOpen) => !prevIsDropdownOpen);
+  };
+
+  const filteredMembers = useMemo(() => {
+    let filteredData = membersList;
+
+    if (filterOption === "receivables") {
+      filteredData = filteredData.filter((member) => member.totalCredit > 0);
+    } else if (filterOption === "payables") {
+      filteredData = filteredData.filter((member) => member.totalCash > 0);
+    } else if (filterOption === "settled") {
+      filteredData = filteredData.filter(
+        (member) => member.totalCash === 0 && member.totalCredit === 0
+      );
     }
 
-    const filteredMembers = membersList.filter(
-      (member) =>
-        member.username.toLowerCase().includes(query) ||
-        member.phone.includes(query)
-    );
+    if (searchQuery.trim() !== "") {
+      filteredData = filteredData.filter((member) =>
+        Object.values(member).some((value) =>
+          value.toString().toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+    }
 
-    setMembersList(filteredMembers);
-    setNoRecordsFound(filteredMembers.length === 0);
+    if (hideZeroAmount) {
+      filteredData = filteredData.filter(
+        (member) => member.totalCash > 0 || member.totalCredit > 0
+      );
+    }
+
+    // Additional filtering for hiding members with 0 credit and 0 cash
+    if (hideZeroAmount) {
+      filteredData = filteredData.filter(
+        (member) => member.totalCash !== 0 || member.totalCredit !== 0
+      );
+    }
+
+    return filteredData;
+  }, [membersList, searchQuery, filterOption, hideZeroAmount]);
+
+  const sortedMembers = useMemo(() => {
+    let sortedData = [...filteredMembers];
+
+    switch (sortBy) {
+      case "mostRecent":
+        sortedData.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+        break;
+      case "oldest":
+        sortedData.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        break;
+      case "highestAmount":
+        sortedData.sort(
+          (a, b) => b.totalCash + b.totalCredit - a.totalCash - a.totalCredit
+        );
+        break;
+      case "lowestAmount":
+        sortedData.sort(
+          (a, b) => a.totalCash + a.totalCredit - b.totalCash - b.totalCredit
+        );
+        break;
+      case "alphabeticalAZ":
+        sortedData.sort((a, b) => a.username.localeCompare(b.username));
+        break;
+      case "alphabeticalZA":
+        sortedData.sort((a, b) => b.username.localeCompare(a.username));
+        break;
+      default:
+        break;
+    }
+
+    return sortedData;
+  }, [filteredMembers, sortBy]);
+
+  const paginatedMembers = useMemo(() => {
+    const startIndex = currentPage * pageSize;
+    const endIndex = startIndex + pageSize;
+    return sortedMembers.slice(startIndex, endIndex);
+  }, [sortedMembers, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(sortedMembers.length / pageSize);
+
+  if (!isDataFetched) {
+    return <Loader />;
+  }
+  const handleSortByChange = (option) => {
+    setSortBy(option);
   };
 
-  const clearSearch = () => {
-    setSearchQuery("");
-    fetchMembers(authUser.uid);
-    setNoRecordsFound(false);
+  const handleFilterChange = (option) => {
+    setFilterOption(option);
   };
 
-  // Pagination Logic
-  const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 10;
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = membersList.slice(
-    indexOfFirstRecord,
-    indexOfLastRecord
-  );
-  const lastPage = Math.ceil(membersList.length / recordsPerPage);
-
-  const columns = useMemo(
-    () => [
-      {
-        Header: "#",
-        accessor: (row, rowIndex) => rowIndex + 1,
-        id: "rowIndex",
-        disableSortBy: true, // disable sorting on the index
-        width: 20,
-      },
-      {
-        Header: "Customer",
-        accessor: "username",
-        width: 200,
-      },
-      {
-        Header: "Phone",
-        accessor: "phone",
-        width: 150,
-      },
-      {
-        Header: "Ref #",
-        accessor: "referenceNo",
-        width: 100,
-      },
-      {
-        Header: "City",
-        accessor: "city",
-      },
-      {
-        Header: "Type",
-        accessor: "type",
-        width: 100,
-      },
-      {
-        Header: "Date",
-        accessor: "date",
-        sortType: "basic",
-        width: 100,
-      },
-      {
-        Header: "Balance",
-        accessor: (row) => balances[row.id], // Access balance using the customer's id
-        width: 100,
-        Cell: ({ value }) => {
-          let balanceColorClass = "text-black font-normal";
-          if (value < 0) {
-            balanceColorClass = "text-red-500 font-bold";
-          } else if (value > 0) {
-            balanceColorClass = "text-green-500 font-bold";
-          }
-          return <span className={balanceColorClass}>{value}</span>;
-        },
-      },
-      {
-        Header: "Action",
-        accessor: "id",
-        disableSortBy: true,
-        Cell: ({ value }) => (
-          <div className="flex gap-3">
-            <Link className="button-view-icon" href={`/viewMember/${value}`}>
-              <TbEye />
-            </Link>
-            <Link className="button-edit-icon" href={`/editMember/${value}`}>
-              <TbPencil />
-            </Link>
-
-            <DeleteButtonWithConfirmation
-              onDelete={() => deleteMember(value)}
-              className="button-delete-icon" // Provide the class for styling
-              text="" // Provide text to display alongside the icon
-              showButton={authUser && authUser.username === "Admin"}
-            />
-          </div>
-        ),
-      },
-    ],
-    [balances]
-  );
-
-  const data = useMemo(() => membersList, [membersList]);
-  const {
-    getTableProps,
-    getTableBodyProps,
-    headerGroups,
-    prepareRow,
-    page,
-    nextPage,
-    previousPage,
-    canNextPage,
-    canPreviousPage,
-    setGlobalFilter,
-    state: { pageIndex },
-    pageOptions, // Include this line to get the page options
-  } = useTable(
-    {
-      columns,
-      data,
-      initialState: { pageIndex: 0, pageSize: 20 },
-    },
-    useGlobalFilter,
-    useSortBy,
-    usePagination
-  );
-
-  const handleInputChange = (e) => {
-    setSearchInput(e.target.value);
-    setGlobalFilter(e.target.value); // This will filter the table globally
+  const handleHideZeroAmountChange = () => {
+    setHideZeroAmount((prevHideZeroAmount) => !prevHideZeroAmount);
+  };
+  const handleToggleDropdown = () => {
+    setIsDropdownOpen((prevIsDropdownOpen) => !prevIsDropdownOpen);
   };
   return (
-    <>
+    <div className="">
       <ToastContainer />
-      <div className="page-header-group">
-        <h1 className="heading1 !mb-0 inline-flex items-center gap-1">
-          Customers List
+
+      <PriceCard
+        label="Total Cash Balance"
+        cash={totalCashBalance}
+        credit={totalCreditBalance}
+      />
+
+      <div className="flex justify-between flex-row-reverse items-center mb-4">
+        <h1 className="text-sm lg:text-xl font-semibold font-gulzar">
+          {memberType === "shopkeeper" ? "شاپ کیپر" : "کسٹمرز"}
         </h1>
-        <div className="flex justify-end gap-2 items-stretch mb-3">
-          <div className="block relative mt-2 sm:mt-0 w-full sm:w-auto">
-            <span className="h-full absolute inset-y-0 left-0 flex items-center pl-2">
-              <TbSearch />
+        <Link href="/addMember" passHref>
+          <button className="button-style">
+            <span className="font-gulzar">
+              نیا {memberType === "shopkeeper" ? "شاپ کیپر" : "کسٹمرز"}
             </span>
-            <input
-              value={searchInput}
-              onChange={handleInputChange}
-              placeholder="Search members..."
-              className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
-            />
-          </div>
-          <Link href={"./addMember"} className="button-style">
-            <TiPlus /> Add Customer
-          </Link>
-        </div>
+            <TiPlus />
+          </button>
+        </Link>
       </div>
-      {!isLoading && membersList.length > 0 && isDataFetched && (
-        <div className="overflow-x-auto">
-          <table
-            {...getTableProps()}
-            className="min-w-full divide-y divide-gray-200"
+
+      <div className="flex mb-4 items-center gap-1" dir="rtl">
+        <SearchInput
+          searchInput={searchQuery}
+          handleInputChange={handleSearch}
+          className="ml-1"
+        />
+        {/* <select
+          value={filterOption}
+          onChange={handleFilterChange}
+          className="p-2 border rounded"
+        >
+          <option value="all">All</option>
+          <option value="receivables">Receivables</option>
+          <option value="payables">Payables</option>
+          <option value="settled">Settled</option>
+        </select> */}
+
+        {/* <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="p-2 border rounded"
+        >
+          <option value="mostRecent">Most Recent</option>
+          <option value="oldest">Oldest</option>
+          <option value="highestAmount">Highest Amount</option>
+          <option value="lowestAmount">Lowest Amount</option>
+          <option value="alphabeticalAZ">By Name (A-Z)</option>
+          <option value="alphabeticalZA">By Name (Z-A)</option>
+        </select> */}
+        {/* <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="hideZeroAmount"
+            checked={hideZeroAmount}
+            onChange={() => setHideZeroAmount(!hideZeroAmount)}
+            className="mr-2"
+          />
+          <label htmlFor="hideZeroAmount">Hide 0 amount</label>
+        </div> */}
+
+        {/* custom dropdown start */}
+        <div className="relative">
+          <button
+            className={` !w-[38px] !h-[38px]  *:
+            ${
+              filterOption !== "all" ||
+              hideZeroAmount ||
+              sortBy !== "mostRecent"
+                ? "button-style-icon"
+                : "button-outline-icon"
+            }
+            `}
+            onClick={handleToggleDropdown}
           >
-            <thead className="bg-gray-50">
-              {headerGroups.map((headerGroup) => (
-                <tr {...headerGroup.getHeaderGroupProps()}>
-                  {headerGroup.headers.map((column) => (
-                    <th
-                      {...column.getHeaderProps(column.getSortByToggleProps())}
-                      className="px-2 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
-                    >
-                      <span className="flex">
-                        {column.render("Header")}
-                        <span className="d-flex w-[18px]">
-                          {column.isSorted ? (
-                            column.isSortedDesc ? (
-                              <TiArrowSortedDown className="text-lg text-green-700" />
-                            ) : (
-                              <TiArrowSortedUp className="text-lg text-red-700" />
-                            )
-                          ) : (
-                            ""
-                          )}
-                        </span>
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              ))}
-            </thead>
-            <tbody {...getTableBodyProps()}>
-              {page.map((row) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()}>
-                    {row.cells.map((cell) => (
-                      <td
-                        {...cell.getCellProps()}
-                        style={{ width: cell.column.width }}
-                        className="px-2 py-4"
-                      >
-                        {cell.render("Cell")}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div className="flex justify-between items-center px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
-            <div className="sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing{" "}
-                  <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                    {pageIndex * 20 + 1}
-                  </span>{" "}
-                  to{" "}
-                  <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                    {Math.min((pageIndex + 1) * 20, data.length)}
-                  </span>{" "}
-                  out of{" "}
-                  <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                    {data.length}
-                  </span>{" "}
-                  results
-                </p>
+            <FaFilter />
+          </button>
+          {isDropdownOpen && (
+            <div className="absolute left-0 z-10 overflow-hidden rounded-b-xl w-52 p-2 pb-10 bg-white border border-gray-200 shadow-lg">
+              {/* Filter options */}
+              <div className="mb-5">
+                <h1 className="text-sm font-semibold pb-1 mb-3 border-b border-gray-200 font-gulzar">
+                  فلٹر کرو
+                </h1>
+                <ul className="flex gap-2 flex-wrap text-sm">
+                  <li
+                    className={`border rounded-2xl px-2 min-w-12 text-center cursor-pointer font-gulzar ${
+                      filterOption === "all"
+                        ? "bg-teal-600 border-teal-500 text-white"
+                        : "border-gray-500"
+                    }`}
+                    onClick={() => handleFilterChange("all")}
+                  >
+                    سب
+                  </li>
+                  <li
+                    className={`border rounded-2xl px-2 min-w-12 text-center cursor-pointer font-gulzar ${
+                      filterOption === "receivables"
+                        ? "bg-teal-600 border-teal-500 text-white"
+                        : "border-gray-500"
+                    }`}
+                    onClick={() => handleFilterChange("receivables")}
+                  >
+                    <span className="font-bold text-green-700">+</span> قابل
+                    وصول
+                  </li>
+                  <li
+                    className={`border rounded-2xl px-2 min-w-12 text-center cursor-pointer font-gulzar ${
+                      filterOption === "payables"
+                        ? "bg-teal-600 border-teal-500 text-white"
+                        : "border-gray-500"
+                    }`}
+                    onClick={() => handleFilterChange("payables")}
+                  >
+                    <span className="font-bold text-red-700">-</span> قابل
+                    ادائیگی
+                  </li>
+                  <li
+                    className={`border rounded-2xl px-2 min-w-12 text-center cursor-pointer ${
+                      filterOption === "settled"
+                        ? "bg-teal-600 border-teal-500 text-white"
+                        : "border-gray-500"
+                    }`}
+                    onClick={() => handleFilterChange("settled")}
+                  >
+                    برابر 0
+                  </li>
+                </ul>
               </div>
-              <div>
-                <nav className="relative z-0 inline-flex shadow-sm gap-1">
-                  <button
-                    onClick={() => previousPage()}
-                    disabled={!canPreviousPage}
-                    className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
+              {/* Sort options */}
+              <div className="mb-2">
+                <h1 className="text-sm font-semibold pb-1 mb-3 border-b border-gray-200 font-gulzar">
+                  ترتیب دیں
+                </h1>
+                <ul className="flex gap-2 flex-col text-sm">
+                  <li
+                    className={`flex justify-between cursor-pointer ${
+                      sortBy === "mostRecent" ? "text-teal-600" : ""
+                    }`}
+                    onClick={() => handleSortByChange("mostRecent")}
                   >
-                    <FaArrowLeftLong className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => nextPage()}
-                    disabled={!canNextPage}
-                    className="relative inline-flex items-center px-2 py-2 ml-0 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
+                    <span className="font-gulzar">سب سے نیا</span>
+                    {sortBy === "mostRecent" ? (
+                      <FaRegDotCircle />
+                    ) : (
+                      <FaRegCircle />
+                    )}
+                  </li>
+                  <li
+                    className={`flex justify-between cursor-pointer ${
+                      sortBy === "oldest" ? "text-teal-600" : ""
+                    }`}
+                    onClick={() => handleSortByChange("oldest")}
                   >
-                    <FaArrowRightLong className="h-5 w-5" />
+                    <span className="font-gulzar">سب سے پرانا</span>{" "}
+                    {sortBy === "oldest" ? <FaRegDotCircle /> : <FaRegCircle />}
+                  </li>
+                  <li
+                    className={`flex justify-between cursor-pointer ${
+                      sortBy === "highestAmount" ? "text-teal-600" : ""
+                    }`}
+                    onClick={() => handleSortByChange("highestAmount")}
+                  >
+                    <span className="font-gulzar">سب سے زیادہ رقم</span>{" "}
+                    {sortBy === "highestAmount" ? (
+                      <FaRegDotCircle />
+                    ) : (
+                      <FaRegCircle />
+                    )}
+                  </li>
+                  <li
+                    className={`flex justify-between cursor-pointer ${
+                      sortBy === "lowestAmount" ? "text-teal-600" : ""
+                    }`}
+                    onClick={() => handleSortByChange("lowestAmount")}
+                  >
+                    <span className="font-gulzar">سب سے کم رقم</span>{" "}
+                    {sortBy === "lowestAmount" ? (
+                      <FaRegDotCircle />
+                    ) : (
+                      <FaRegCircle />
+                    )}
+                  </li>
+                  <li
+                    className={`flex justify-between cursor-pointer ${
+                      sortBy === "alphabeticalAZ" ? "text-teal-600" : ""
+                    }`}
+                    onClick={() => handleSortByChange("alphabeticalAZ")}
+                  >
+                    <span>(A-Z) نام سے ترتیب </span>{" "}
+                    {sortBy === "alphabeticalAZ" ? (
+                      <FaRegDotCircle />
+                    ) : (
+                      <FaRegCircle />
+                    )}
+                  </li>
+                  <li
+                    className={`flex justify-between cursor-pointer ${
+                      sortBy === "alphabeticalZA" ? "text-teal-600" : ""
+                    }`}
+                    onClick={() => handleSortByChange("alphabeticalZA")}
+                  >
+                    <span>(Z-A) نام سے ترتیب </span>{" "}
+                    {sortBy === "alphabeticalZA" ? (
+                      <FaRegDotCircle />
+                    ) : (
+                      <FaRegCircle />
+                    )}
+                  </li>
+                </ul>
+              </div>
+              {/* Hide zero amount checkbox */}
+              <div className="pt-2 text-sm">
+                <input
+                  type="checkbox"
+                  id="hideZeroAmount"
+                  checked={hideZeroAmount}
+                  onChange={handleHideZeroAmountChange}
+                  className="ml-1 relative top-0.5"
+                />
+                <label
+                  htmlFor="hideZeroAmount"
+                  className={`${
+                    hideZeroAmount === true ? "text-teal-600" : ""
+                  }`}
+                >
+                  صفر کی رقم چھپائیں
+                </label>
+              </div>
+              {/* footer */}
+              <div className="font-gulzar absolute w-full flex gap-0.5 bottom-0 left-0 text-center font-semibold text-xs h-8">
+                <button
+                  onClick={handleToggleDropdown}
+                  className={`bg-teal-600 text-white cursor-pointer hover:bg-teal-700 ${
+                    filterOption !== "all" ||
+                    hideZeroAmount ||
+                    sortBy !== "mostRecent"
+                      ? "w-1/2"
+                      : "w-full"
+                  }`}
+                >
+                  بند کریں
+                </button>
+                {(filterOption !== "all" ||
+                  hideZeroAmount ||
+                  sortBy !== "mostRecent") && (
+                  <button
+                    onClick={handleClearFilters}
+                    className="w-1/2 bg-gray-600 text-white cursor-pointer hover:bg-gray-700"
+                  >
+                    صاف فلٹر
                   </button>
-                </nav>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
-      {isLoading ||
-        (!isDataFetched && (
-          <div>
-            <Loader />
-          </div>
-        ))}
-      {!isLoading && membersList.length === 0 && isDataFetched && (
-        <div className="border border-gray-200 flex justify-center items-center flex-col text-center h-[40vh] mt-10">
-          <p className="text-5xl rotate-45 text-white mb-6 inline-flex bg-purple-700 rounded-full p-4 shadow-md shadow-gray-500 ">
-            <TbHourglass />
-          </p>
-          <span className="w-full block text-xl font-bold text-red-400">{`You don't have any Members`}</span>
-          <Link className="button-style mt-3" href={"/addMember"}>
-            <TiPlus /> Add Customer
-          </Link>
-        </div>
-      )}{" "}
-      {noRecordsFound && isDataFetched && (
-        <div className="border border-gray-200 flex justify-center items-center flex-col text-center h-[40vh] mt-10">
-          <p className="text-5xl text-white mb-6 inline-flex bg-purple-700 rounded-full p-4 shadow-md shadow-gray-500 ">
-            <TbListSearch />
-          </p>
+        {/* custom dropdown end */}
+      </div>
 
-          <span className="w-full block text-xl font-bold text-red-400">{`No record for this search.`}</span>
-          <button className="button-style mt-3" onClick={clearSearch}>
-            <TbSearch /> Clear Search
-          </button>
+      <table className="min-w-full bg-white border border-gray-300" dir="rtl">
+        <thead className="text-xs lg:text-sm  font-medium font-gulzar">
+          <tr>
+            <th className="py-2 px-4 border-b text-right">تفصیلات</th>
+            {/* <th className="py-2 px-4 border-b">Reference</th>
+            <th className="py-2 px-4 border-b">City</th>
+            <th className="py-2 px-4 border-b">Date</th> */}
+            <th className="py-2 px-4 border-b">نقدی</th>
+            <th className="py-2 px-4 border-b">ادھار</th>
+            <th className="py-2 px-4 border-b">اکشین</th>
+          </tr>
+        </thead>
+        <tbody className="text-xs lg:text-sm align-top">
+          {paginatedMembers.map((member) => (
+            <tr key={member.id}>
+              <td className="py-2 px-4 border-b space-y-1">
+                {member.username && (
+                  <p className="font-semibold text-xs lg:text-sm flex items-center gap-1 text-blue-500">
+                    <FaRegUserCircle className=" text-xs" />{" "}
+                    <span className="truncate max-w-28">{member.username}</span>
+                  </p>
+                )}
+                {member.date && (
+                  <p className="text-xs lg:text-sm flex items-center gap-1">
+                    <MdOutlineDateRange />{" "}
+                    {new Date(member.date).toLocaleDateString()}
+                  </p>
+                )}
+                {member.referenceNo && (
+                  <p className="text-xs lg:text-sm flex items-center gap-1">
+                    <AiOutlineExclamationCircle />{" "}
+                    <span className="truncate max-w-28">
+                      {member.referenceNo}
+                    </span>
+                  </p>
+                )}
+                {member.city && (
+                  <p className="text-xs lg:text-sm flex items-center gap-1">
+                    <MdOutlineLocationOn />{" "}
+                    <span className="truncate max-w-28">{member.city}</span>
+                  </p>
+                )}
+                <p className="text-xs lg:text-sm flex items-center gap-1">
+                  {member.type === "Customer" ? (
+                    <span className="flex items-center gap-1">
+                      <PiUserListBold /> کسٹمر
+                    </span>
+                  ) : member.type === "Shopkeeper" ? (
+                    <span className="flex items-center gap-1">
+                      <CiShop /> شاپ کیپر
+                    </span>
+                  ) : (
+                    ""
+                  )}
+                </p>
+              </td>
+              {/* <td className="py-2 px-4 border-b">{member.referenceNo}</td> */}
+              {/* <td className="py-2 px-4 border-b">{member.city}</td> */}
+              {/* <td className="py-2 px-4 border-b">
+                {new Date(member.date).toLocaleDateString()}
+              </td> */}
+              <td className="py-2 px-2 border-b text-center text-teal-600 font-bold">
+                {member.totalCash}
+              </td>
+              <td className="py-2 px-2 border-b text-center text-red-600 font-bold">
+                {member.totalCredit}
+              </td>
+              <td className="py-2 px-2 border-b text-center">
+                <div className="flex space-x-2 justify-center">
+                  <Link href={`/editMember/${member.id}`} passHref>
+                    <TbPencil className="text-gray-400 hover:text-blue-600" />
+                  </Link>
+                  <Link href={`/viewMember/${member.id}`} passHref>
+                    <TbEye className="text-gray-400 hover:text-blue-600" />
+                  </Link>
+                  <DeleteButtonWithConfirmation
+                    onDelete={() => deleteMember(member.id)}
+                  >
+                    <TbTrash className="text-gray-400 hover:text-red-600" />
+                  </DeleteButtonWithConfirmation>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <PaginationMembersList
+        canPreviousPage={currentPage > 0}
+        canNextPage={currentPage < totalPages - 1}
+        pageCount={totalPages}
+        gotoPage={(page) => setCurrentPage(page)}
+        nextPage={() =>
+          setCurrentPage((prev) => Math.min(prev + 1, totalPages - 1))
+        }
+        previousPage={() => setCurrentPage((prev) => Math.max(prev - 1, 0))}
+        pageIndex={currentPage}
+      />
+      {noRecordsFound && (
+        <div className="text-center mt-4">
+          <p>No records found.</p>
         </div>
       )}
-    </>
+    </div>
   );
 }

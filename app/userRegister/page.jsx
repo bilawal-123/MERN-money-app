@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { auth } from "@/firebase/firebase";
+import { auth } from "../../firebase/firebase";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { useAuth } from "@/firebase/auth";
+import { useAuth } from "../../firebase/auth";
 import { useRouter, usePathname } from "next/navigation";
 import Loader from "../components/loader";
 import { CiLock } from "react-icons/ci";

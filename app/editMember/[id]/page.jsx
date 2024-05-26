@@ -1,4 +1,4 @@
-import EditMemberForm from "@/app/components/EditMemberForm";
+import EditMemberForm from "../../components/EditMemberForm";
 
 export default function EditMember() {
   return <EditMemberForm></EditMemberForm>;

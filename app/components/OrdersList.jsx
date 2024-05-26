@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect, useState } from "react";
 import { useTable, useSortBy, useFilters, usePagination } from "react-table";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import { TiArrowSortedUp, TiArrowSortedDown, TiPlus } from "react-icons/ti";
 import { TbHourglass, TbPencil, TbSearch, TbTrash } from "react-icons/tb";
 import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
-import AddOrderModal from "@/app/components/AddOrderModal";
+import AddOrderModal from "..//components/AddOrderModal";
 import { useAuth } from "../../firebase/auth";
 import Loader from "../components/loader";
 // Import Firestore methods correctly
@@ -113,7 +113,7 @@ const OrdersList = ({ customerId }) => {
   };
   const handleEdit = (order) => {
     setCurrentOrder(order);
-    setOrderId(order.id);
+    // setOrderId(order.id);
     setShowModal(true);
   };
   const onOrderUpdated = () => {
@@ -168,27 +168,27 @@ const OrdersList = ({ customerId }) => {
         width: 100,
       },
       {
-        Header: "Order Details",
+        Header: "آرڈر کی تفصیل",
         accessor: "orderDetails", // Make sure this matches the field name in your Firestore documents
         width: 300,
       },
       {
-        Header: "Cash",
+        Header: "نقدی",
         accessor: "cash",
         width: 80,
       },
       {
-        Header: "Credit",
+        Header: "ادھار",
         accessor: "credit",
         width: 80,
       },
       {
-        Header: "Actions",
+        Header: "اکشین",
         id: "actions",
         width: 50,
         accessor: () => "actions",
         Cell: ({ row }) => (
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-1">
             <button
               onClick={() => handleEdit(row.original)}
               className="button-edit-icon"
@@ -242,7 +242,7 @@ const OrdersList = ({ customerId }) => {
       <div>
         <div className="flex justify-between items-center">
           <h3 className="text-[16px] font-semibold text-gray-800 flex items-center gap-2">
-            Current Balance:{" "}
+            موجودہ بیلنس
             <span
               className={`text-white px-2 py-[2px] rounded text-[14px] font-bold ${balanceColor}`}
             >
@@ -258,12 +258,13 @@ const OrdersList = ({ customerId }) => {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search orders..."
+                placeholder="آرڈرز تلاش کریں..."
                 className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
               />
             </div>
             <button onClick={() => handleAddOrder()} className="button-style">
-              <TiPlus /> Add Order
+              <TiPlus />
+              آرڈر شامل کریں
             </button>
           </div>
         </div>
@@ -345,11 +346,6 @@ const OrdersList = ({ customerId }) => {
                                   : "w-auto" // Default width for all other columns
                               }`}
                             >
-                              {cell.column.id === "date" ? (
-                                <span className="font-semibold w-4 mr-2">
-                                  {row.original.orderNumber}.
-                                </span>
-                              ) : null}
                               {cell.render("Cell")}
                             </td>
                           );
@@ -361,8 +357,8 @@ const OrdersList = ({ customerId }) => {
                 <tfoot>
                   <tr className="bg-gray-50">
                     <td></td>
-                    <td className="px-2 py-4 font-bold text-right pr-3">
-                      Total:
+                    <td className="px-2 py-4 font-bold text-left text-lg pr-3">
+                      کل:
                     </td>
                     <td className="px-2 py-4 whitespace-nowrap text-sm text-green-700 font-extrabold  w-auto  tracking-wide">
                       {totalCash}
@@ -379,7 +375,7 @@ const OrdersList = ({ customerId }) => {
                           : "text-black"
                       }`}
                     >
-                      <span>Balance</span>{" "}
+                      <span className="text-lg font-bold">بیلنس</span>{" "}
                       <span className=" tracking-wide">
                         {totalCash - totalCredit}
                       </span>
@@ -393,19 +389,19 @@ const OrdersList = ({ customerId }) => {
               <div className="sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing{" "}
+                    دکھا رہا ہے{" "}
                     <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
                       {pageIndex * 20 + 1}
                     </span>{" "}
-                    to{" "}
+                    سے{" "}
                     <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
                       {Math.min((pageIndex + 1) * 20, data.length)}
                     </span>{" "}
-                    out of{" "}
+                    تک{" "}
                     <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
                       {data.length}
                     </span>{" "}
-                    results
+                    نتائج میں سے
                   </p>
                 </div>
                 <div>
@@ -436,9 +432,9 @@ const OrdersList = ({ customerId }) => {
               <p className="text-5xl rotate-45 text-white mb-6 inline-flex bg-purple-700 rounded-full p-4 shadow-md shadow-gray-500 ">
                 <TbHourglass />
               </p>
-              <span className="w-full block text-xl font-bold text-red-400 mb-3">{`You don't have any Orders`}</span>
+              <span className="w-full block text-xl font-bold text-red-400 mb-3">{`آپ کے پاس کوئی آرڈر نہیں ہے۔`}</span>
               <button onClick={() => handleAddOrder()} className="button-style">
-                <TiPlus /> Add Order
+                <TiPlus /> آرڈر شامل کریں
               </button>
             </div>
           </>

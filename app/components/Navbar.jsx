@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Loader from "./loader";
 import { useEffect, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import Image from "next/image";
 import { Nova_Square, Roboto } from "next/font/google";
 // React icons
@@ -125,7 +125,7 @@ export default function Navbar() {
               <Link href="/profile" className="nav-link-style">
                 <TbUserCircle className="nav-link-icon-style" />
                 <span className="hidden sm:block">
-                  {authUser.username || authUser.email} :{authUser.role}
+                  {authUser.username || authUser.email} {authUser.role}
                 </span>{" "}
                 {/* Display user's email */}
               </Link>

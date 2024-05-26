@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import { useAuth } from "../../firebase/auth"; // Import useAuth hook
 import { IoMdClose } from "react-icons/io";
 import Toast from "./Toast";
@@ -19,7 +19,7 @@ export default function AddOrderModal({
 
   const handleOrderSubmit = async () => {
     if (!authUser) {
-      alert("You must be logged in to submit an order.");
+      alert("آرڈر جمع کرانے کے لیے آپ کا لاگ ان ہونا ضروری ہے۔");
       return;
     }
 
@@ -34,7 +34,7 @@ export default function AddOrderModal({
         credit,
         createdAt: serverTimestamp(),
       });
-      <Toast type="success" message="Order added successfully" />;
+      <Toast type="success" message="آرڈر کامیابی کے ساتھ شامل ہو گیا۔" />;
       // toast.success("Order Item Successfully Deleted!", {
       //   position: "top-right",
       //   autoClose: 3000,
@@ -76,7 +76,7 @@ export default function AddOrderModal({
           <div className="mt-3 text-center">
             <div className="flex justify-between items-center pb-3">
               <p className="text-xl font-bold text-gray-900">
-                Add Order for Customer
+                گاہک کے لیے آرڈر شامل کریں۔
               </p>
               <button
                 className="modal-close cursor-pointer z-50"
@@ -87,7 +87,7 @@ export default function AddOrderModal({
             </div>
             <div className="flex gap-10 border-b border-gray-300 py-2 mb-6">
               <div>
-                Current Balance:{" "}
+                موجودہ بیلنس:
                 <span
                   className={`mb-2.5 font-semibold ${
                     balance < 0
@@ -103,7 +103,7 @@ export default function AddOrderModal({
             </div>
             <div className="personal-detail-box">
               <div>
-                <label className="label-style">Order Detail</label>
+                <label className="label-style">آرڈر کی تفصیل</label>
                 <input
                   type="text"
                   value={orderDetails}
@@ -112,7 +112,7 @@ export default function AddOrderModal({
                 />
               </div>
               <div>
-                <label className="label-style">Cash</label>
+                <label className="label-style">نقدی</label>
                 <input
                   type="number"
                   value={cashAmount}
@@ -121,7 +121,7 @@ export default function AddOrderModal({
                 />
               </div>
               <div>
-                <label className="label-style">Credit</label>
+                <label className="label-style">ادھار</label>
                 <input
                   type="number"
                   value={creditAmount}
@@ -132,10 +132,10 @@ export default function AddOrderModal({
             </div>
             <div className="flex items-center py-3 gap-3">
               <button className="button-black" onClick={onClose}>
-                Close
+                منسوخ
               </button>
               <button className="button-style" onClick={handleOrderSubmit}>
-                Submit Order
+                آرڈر جمع کرانے
               </button>
             </div>
           </div>

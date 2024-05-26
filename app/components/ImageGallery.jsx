@@ -12,6 +12,7 @@ import Image from "next/image";
 import { TbEye, TbTrash } from "react-icons/tb";
 import { FaArrowLeftLong, FaArrowRightLong } from "react-icons/fa6";
 import Loader from "./loader";
+import Pagination from "./Pagination";
 
 const ImageGallery = () => {
   const [images, setImages] = useState([]);
@@ -67,8 +68,6 @@ const ImageGallery = () => {
       images.slice(start, end).map((image) => image.orderId)
     );
   }, [currentPage, images]);
-  // Get current images to display based on pagination
-  // Get current images to display based on pagination
   const indexOfLastImage = currentPage * imagesPerPage;
   const indexOfFirstImage = indexOfLastImage - imagesPerPage;
   const currentImages = images.slice(indexOfFirstImage, indexOfLastImage);
@@ -114,23 +113,6 @@ const ImageGallery = () => {
     }
   };
 
-  // const handleCheckboxChange = (event, orderId) => {
-  //   const { checked } = event.target;
-  //   if (checked) {
-  //     setSelectedImages((prevSelectedImages) => {
-  //       console.log("Selected Order IDs:", [...prevSelectedImages, orderId]);
-  //       return [...prevSelectedImages, orderId];
-  //     });
-  //   } else {
-  //     setSelectedImages((prevSelectedImages) => {
-  //       console.log(
-  //         "Selected Order IDs:",
-  //         prevSelectedImages.filter((id) => id !== orderId)
-  //       );
-  //       return prevSelectedImages.filter((id) => id !== orderId);
-  //     });
-  //   }
-  // };
   const handleCheckboxChange = (event, orderId) => {
     const { checked } = event.target;
     if (checked) {
@@ -145,18 +127,6 @@ const ImageGallery = () => {
     }
   };
 
-  // const handleSelectAll = (event) => {
-  //   const { checked } = event.target;
-  //   const allOrderIds = images.map((image) => image.orderId);
-  //   if (checked) {
-  //     setSelectedImages(allOrderIds);
-  //     console.log("Selected Order IDs:", allOrderIds);
-  //   } else {
-  //     setSelectedImages([]);
-  //     console.log("Selected Order IDs: []");
-  //   }
-  //   setAllCheckboxSelected(checked);
-  // };
   const handleSelectAll = () => {
     if (allCheckboxSelected) {
       setSelectedImages([]);
@@ -284,68 +254,14 @@ const ImageGallery = () => {
 
       {totalPages == 0 && <Loader />}
       {totalPages > 0 && (
-        <div className="flex justify-between items-center px-4 py-3  border-t border-b bg-gray-50 border-gray-200 sm:px-6 mt-4">
-          <div className="flex sm:items-center sm:justify-start ml-2">
-            {/* Count */}
-            <p className="text-sm text-gray-700">
-              Showing{" "}
-              <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                {indexOfFirstImage + 1}
-              </span>{" "}
-              to{" "}
-              <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                {Math.min(indexOfLastImage, images.length)}
-              </span>{" "}
-              out of{" "}
-              <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                {images.length}
-              </span>{" "}
-              results
-            </p>
-          </div>
-          {totalPages > 0 && (
-            <span className="text-sm pr-1">
-              Total Pages:{" "}
-              <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
-                {totalPages}
-              </span>
-            </span>
-          )}
-          <div className="relative z-0 inline-flex shadow-sm gap-1 flex-col justify-end items-end">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => paginate(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <FaArrowLeftLong className="h-5 w-5" />
-              </button>
-
-              {/* Input field for specific page */}
-              <input
-                type="text"
-                value={inputPage}
-                onChange={handleInputPageChange}
-                placeholder="#"
-                className="relative w-12 justify-center text-center font-extrabold inline-flex items-center px-2 py-2 text-sm  text-gray-500 bg-white border border-gray-300  leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 "
-              />
-
-              <button
-                onClick={() => paginate(currentPage + 1)}
-                disabled={indexOfLastImage >= images.length}
-                className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                <FaArrowRightLong className="h-5 w-5" />
-              </button>
-            </div>
-
-            {pageError && (
-              <span className="error text-xs text-red-700 pr-1">
-                {pageError}
-              </span>
-            )}
-          </div>
-        </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          paginate={paginate}
+          handleInputPageChange={handleInputPageChange}
+          inputPage={inputPage}
+          pageError={pageError}
+        />
       )}
     </div>
   );

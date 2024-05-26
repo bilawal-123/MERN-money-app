@@ -1,14 +1,14 @@
 "use client";
-import Loader from "@/app/components/loader";
+import Loader from "../../components/loader";
 import { useRef, useEffect, useState } from "react";
-import { useAuth } from "@/firebase/auth";
+import { useAuth } from "./../../../firebase/auth";
 import { useRouter, useParams } from "next/navigation";
-import { db } from "@/firebase/firebase";
+import { db } from "./../../../firebase/firebase";
 import Link from "next/link";
 import { TbPencil, TbTrash } from "react-icons/tb";
-import OrdersList from "@/app/components/OrdersList";
+import OrdersList from "../../components/OrdersList";
 import { TiPlus } from "react-icons/ti";
-import DeleteButtonWithConfirmation from "@/app/components/DeleteButtonWithConfirmation";
+import DeleteButtonWithConfirmation from "../../components/DeleteButtonWithConfirmation";
 import {
   getDocs,
   getDoc,
@@ -88,15 +88,15 @@ export default function ViewMember() {
 
   return (
     <>
-      <div>
+      <div className="font-gulzar" dir="rtl">
         <div className="page-header-group">
-          <h1 className="heading1">Customer Details</h1>
+          <h1 className="heading1">کسٹمر کی تفصیلات</h1>
           <div className="flex gap-3">
             <Link href={"/addMember"} className="button-style">
-              <TiPlus /> Add Customer
+              <TiPlus /> کسٹمر شامل کریں
             </Link>
             <Link href={`/editMember/${id}`} className="button-edit">
-              <TbPencil /> Edit Customer
+              <TbPencil /> کسٹمر میں ترمیم کریں۔
             </Link>
             <DeleteButtonWithConfirmation
               onDelete={() => deleteMember(id)}
@@ -107,34 +107,34 @@ export default function ViewMember() {
         </div>
 
         <div className="box-style">
-          <h2 className="heading2">Personal Detail</h2>
+          <h2 className="heading2">ذاتی تفصیل</h2>
           <div className="personal-detail-box">
             <div>
-              <span className="label-style">Customer Name:</span>
+              <span className="label-style">کسٹمر کا نام</span>
               <p>{member?.username}</p>
             </div>
             <div>
-              <span className="label-style">Reference No:</span>
+              <span className="label-style">کھا تا نمبر</span>
               <p>{member?.referenceNo}</p>
             </div>
             <div>
-              <span className="label-style">Customer Type:</span>
+              <span className="label-style">کسٹمر کی قسم</span>
               <p>{member?.type}</p>
             </div>
             <div>
-              <span className="label-style">Phone:</span>
+              <span className="label-style">فون نمبر</span>
               <p>{member?.phone}</p>
             </div>
             <div>
-              <span className="label-style">City:</span>
+              <span className="label-style">شہر</span>
               <p>{member?.city}</p>
             </div>
             <div>
-              <span className="label-style">Address:</span>
+              <span className="label-style">پتہ</span>
               <p>{member?.address}</p>
             </div>
             <div>
-              <span className="label-style">Date:</span>
+              <span className="label-style">تاریخ</span>
               <p>{member?.date}</p>
             </div>
           </div>

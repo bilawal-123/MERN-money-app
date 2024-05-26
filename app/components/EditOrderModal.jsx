@@ -5,7 +5,7 @@ import {
   updateDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import { useAuth } from "../../firebase/auth"; // Import useAuth hook
 import { IoMdClose } from "react-icons/io";
 import Toast from "./Toast";

@@ -2,9 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import Loader from "./loader";
-import { TbDeviceFloppy } from "react-icons/tb";
 import { IoIosArrowRoundBack, IoIosSave } from "react-icons/io";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -20,25 +19,25 @@ export default function EditMemberForm() {
   const [newUsername, setNewUsername] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [newReferenceNo, setNewReferenceNo] = useState("");
-  const [newType, setNewType] = useState("Customer"); // New field for customer type
-  const [newCity, setNewCity] = useState(""); // New field for customer type
-  const [newAddress, setNewAddress] = useState(""); // New field for customer type
-  const currentDate = new Date().toLocaleDateString("en-GB");
+  const [newType, setNewType] = useState("Customer");
+  const [newCity, setNewCity] = useState("");
+  const [newAddress, setNewAddress] = useState("");
+  const [currentDate, setCurrentDate] = useState("");
 
   useEffect(() => {
     const fetchMember = async () => {
       try {
         const memberDoc = await getDoc(doc(db, "members", id));
-        const memberData = memberDoc.data();
-
         if (memberDoc.exists()) {
+          const memberData = memberDoc.data();
           setMember(memberData);
           setNewUsername(memberData.username);
           setNewPhone(memberData.phone);
-          setNewReferenceNo(memberData.cast); // Change this if your data model uses a different field
-          setNewCity(memberData.city); // Change this if your data model uses a different field
-          setNewAddress(memberData.address); // Change this if your data model uses a different field
-          setNewType(memberData.type || "Customer"); // Defaulting to Customer if undefined
+          setNewReferenceNo(memberData.referenceNo); // Correct field
+          setNewCity(memberData.city);
+          setNewAddress(memberData.address);
+          setNewType(memberData.type || "Customer");
+          setCurrentDate(new Date(memberData.date).toLocaleDateString("en-GB"));
         } else {
           console.error("Member not found");
         }
@@ -52,27 +51,28 @@ export default function EditMemberForm() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!newUsername || !newPhone) {
+    if (!newUsername) {
       setErrorMessage("Please fill in all required fields.");
       return;
     }
     try {
       setIsEditing(true);
+      const currentDate = new Date().toISOString();
       await updateDoc(doc(db, "members", id), {
         username: newUsername,
         phone: newPhone,
-        referenceNo: newReferenceNo, // updated to referenceNo
-        type: newType, // adding customerType
-        city: newCity, // adding customerType
-        address: newAddress, // adding customerType
+        referenceNo: newReferenceNo,
+        type: newType,
+        city: newCity,
+        address: newAddress,
         date: currentDate,
       });
-      toast.success("Member Updated successfully!");
+      toast.success("Member updated successfully!");
       setErrorMessage("");
       router.push(`/viewMember/${id}`);
     } catch (error) {
       console.error("Error updating member: ", error);
-      toast.error("Error Updating member. Please try again.");
+      toast.error("Error updating member. Please try again.");
     } finally {
       setIsEditing(false);
     }
@@ -87,33 +87,35 @@ export default function EditMemberForm() {
   };
 
   return (
-    <div>
+    <div className="font-gulzar" dir="rtl">
       <ToastContainer />
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       <div className="">
         <form onSubmit={handleEditSubmit}>
           <div className="page-header-group">
-            <h1 className="heading1">Update Member</h1>
+            <h1 className="heading1">اپ ڈیٹ کسٹمر</h1>
             <div className="flex gap-3">
               <button onClick={Cancel} className="button-default">
                 <IoIosArrowRoundBack />
-                Cancel
+                منسوخ
               </button>
               <button
                 type="submit"
                 disabled={isEditing}
                 className="button-style"
               >
-                <IoIosSave /> {isEditing ? "Saving..." : "Save Changes"}
+                <IoIosSave />{" "}
+                {isEditing ? "تبدیلیاں محفوظ..." : "تبدیلیاں محفوظ کرو"}
               </button>
             </div>
           </div>
           <div className="box-style">
-            <h2 className="heading2">Update Personal Detail</h2>
+            <h2 className="heading2">ذاتی تفصیل</h2>
             <div className="personal-detail-box">
               <div>
                 <label className="label-style">
-                  Customer Name <span className="asterisk">*</span>
+                  کسٹمر کا نام
+                  <span className="asterisk">*</span>
                 </label>
                 <input
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
@@ -124,7 +126,7 @@ export default function EditMemberForm() {
                 />
               </div>
               <div>
-                <label className="label-style">Reference No</label>
+                <label className="label-style">کھا تا نمبر</label>
                 <input
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
                   type="text"
@@ -133,7 +135,7 @@ export default function EditMemberForm() {
                 />
               </div>
               <div>
-                <label className="label-style">Customer Type</label>
+                <label className="label-style">کسٹمر کی قسم</label>
                 <select
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
                   value={newType}
@@ -144,43 +146,34 @@ export default function EditMemberForm() {
                 </select>
               </div>
               <div>
-                <label className="label-style">
-                  Phone <span className="asterisk">*</span>
-                </label>
+                <label className="label-style">فون نمبر</label>
                 <input
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
                   type="tel"
-                  required
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
                 />
               </div>
               <div>
-                <label className="label-style">
-                  City <span className="asterisk">*</span>
-                </label>
+                <label className="label-style">شہر</label>
                 <input
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                  type="tel"
-                  required
+                  type="text"
                   value={newCity}
                   onChange={(e) => setNewCity(e.target.value)}
                 />
               </div>
               <div>
-                <label className="label-style">
-                  Address <span className="asterisk">*</span>
-                </label>
+                <label className="label-style">پتہ</label>
                 <input
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                  type="tel"
-                  required
+                  type="text"
                   value={newAddress}
                   onChange={(e) => setNewAddress(e.target.value)}
                 />
               </div>
               <div>
-                <label className="label-style">Date</label>
+                <label className="label-style">تاریخ</label>
                 <input
                   className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-gray-100 px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
                   type="text"

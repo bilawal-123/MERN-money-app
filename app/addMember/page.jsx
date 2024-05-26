@@ -4,7 +4,7 @@ import { useAuth } from "../../firebase/auth";
 import { useRouter } from "next/navigation";
 import Loader from "../components/loader";
 import { collection, addDoc } from "firebase/firestore";
-import { db } from "@/firebase/firebase";
+import { db } from "../../firebase/firebase";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { IoIosArrowRoundBack } from "react-icons/io";
@@ -22,8 +22,8 @@ export default function AddMember() {
   const [type, setType] = useState("Customer"); // New field for customer type
   const [city, setCity] = useState(""); // New field for customer type
   const [address, setAddress] = useState(""); // New field for customer type
-  const currentDate = new Date().toLocaleDateString("en-GB");
-
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleDateString("en-GB");
   useEffect(() => {
     if (!isLoading && !authUser) {
       router.push("/userLogin");
@@ -32,7 +32,7 @@ export default function AddMember() {
 
   const addMembers = async (e) => {
     e.preventDefault();
-    if (!username || !phone || !referenceNo || !address || !city) {
+    if (!username) {
       setErrorMessage("Please fill in all required fields.");
       return;
     }
@@ -41,10 +41,11 @@ export default function AddMember() {
         owner: authUser.uid,
         username: username,
         phone: phone,
-        date: currentDate,
+        date: currentDate.toISOString(),
         referenceNo: referenceNo,
         city: city,
         address: address,
+        type,
       });
       toast.success("Member added successfully!", {
         position: "top-right",
@@ -83,17 +84,17 @@ export default function AddMember() {
   return !authUser ? (
     <Loader />
   ) : (
-    <div className="">
+    <div className="font-gulzar" dir="rtl">
       <div className="page-header-group">
-        <h1 className="heading1">Add Customer</h1>
+        <h1 className="heading1">کسٹمر شامل کریں۔</h1>
 
         <div className="flex gap-3">
           <button onClick={Cancel} className="button-default">
             <IoIosArrowRoundBack />
-            Cancel
+            منسوخ
           </button>
           <button onClick={addMembers} className="button-style">
-            <TiPlus /> Add Customer
+            <TiPlus /> کسٹمر شامل کریں
           </button>
         </div>
       </div>
@@ -101,16 +102,16 @@ export default function AddMember() {
       {errorMessage && <p className="text-red-500">{errorMessage}</p>}
       <form>
         <div className="box-style">
-          <h2 className="heading2">Personal Detail</h2>
+          <h2 className="heading2">ذاتی تفصیل</h2>
 
           <div className="personal-detail-box">
             <div>
               <label className="label-style">
-                Customer Name <span className="asterisk">*</span>
+                کسٹمر کا نام
+                <span className="asterisk">*</span>
               </label>
               <input
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                placeholder="username"
                 type="text"
                 required
                 value={username}
@@ -118,33 +119,25 @@ export default function AddMember() {
               />
             </div>
             <div>
-              <label className="label-style">
-                Reference No <span className="asterisk">*</span>
-              </label>
+              <label className="label-style">کھا تا نمبر</label>
               <input
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                placeholder="Reference No"
                 type="text"
                 value={referenceNo}
                 onChange={(e) => setReferenceNo(e.target.value)}
               />
             </div>
             <div>
-              <label className="label-style">
-                Customer Phone <span className="asterisk">*</span>
-              </label>
+              <label className="label-style">فون نمبر</label>
               <input
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                placeholder="Phone"
-                type="tel"
-                required
-                pattern="[0-9]{10}"
+                type="text"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
               />
             </div>
             <div>
-              <label className="label-style">Customer Type</label>
+              <label className="label-style">کسٹمر کی قسم</label>
               <select
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
                 value={type}
@@ -155,37 +148,29 @@ export default function AddMember() {
               </select>
             </div>
             <div>
-              <label className="label-style">
-                City <span className="asterisk">*</span>
-              </label>
+              <label className="label-style">شہر</label>
               <input
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                placeholder="City"
                 type="text"
-                required
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
               />
             </div>
             <div>
-              <label className="label-style">
-                Address <span className="asterisk">*</span>
-              </label>
+              <label className="label-style">پتہ</label>
               <input
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-white px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
-                placeholder="Address"
                 type="text"
-                required
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
               />
             </div>
             <div>
-              <label className="label-style">Date</label>
+              <label className="label-style">تاریخ</label>
               <input
                 className="block mb-1 min-h-[auto] border border-slate-600 w-full bg-gray-100 px-3 py-[0.32rem] leading-[1.6] outline-none focus:border-teal-700"
                 type="text"
-                value={currentDate}
+                value={formattedDate}
                 readOnly
               />
             </div>

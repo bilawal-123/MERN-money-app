@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { auth } from "@/firebase/firebase";
+import { auth } from "../../firebase/firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { useAuth } from "@/firebase/auth";
+import { useAuth } from "../../firebase/auth";
 import { useRouter } from "next/navigation";
 import Loader from "../components/loader";
 import { RiLoginCircleFill } from "react-icons/ri";
