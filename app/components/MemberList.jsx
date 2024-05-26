@@ -276,7 +276,7 @@ export default function MemberList({ memberType }) {
         </Link>
       </div>
 
-      <div className="flex mb-4 items-center gap-1" dir="rtl">
+      <div className="flex mb-4 items-center gap-2" dir="rtl">
         <SearchInput
           searchInput={searchQuery}
           handleInputChange={handleSearch}
@@ -515,8 +515,8 @@ export default function MemberList({ memberType }) {
         {/* custom dropdown end */}
       </div>
 
-      <table className="min-w-full bg-white border border-gray-300" dir="rtl">
-        <thead className="text-xs lg:text-sm  font-medium font-gulzar">
+      <table className="min-w-full bg-white " dir="rtl">
+        <thead className="text-xs lg:text-sm  font-medium font-gulzar bg-gray-50">
           <tr>
             <th className="py-2 px-4 border-b text-right">تفصیلات</th>
             {/* <th className="py-2 px-4 border-b">Reference</th>
@@ -527,10 +527,10 @@ export default function MemberList({ memberType }) {
             <th className="py-2 px-4 border-b">اکشین</th>
           </tr>
         </thead>
-        <tbody className="text-xs lg:text-sm align-top">
+        <tbody className="text-xs lg:text-sm ">
           {paginatedMembers.map((member) => (
             <tr key={member.id}>
-              <td className="py-2 px-4 border-b space-y-1">
+              <td className="py-2 px-4 border-b border-gray-300 space-y-1">
                 {member.username && (
                   <p className="font-semibold text-xs lg:text-sm flex items-center gap-1 text-blue-500">
                     <FaRegUserCircle className=" text-xs" />{" "}
@@ -583,15 +583,26 @@ export default function MemberList({ memberType }) {
                 {member.totalCredit}
               </td>
               <td className="py-2 px-2 border-b text-center">
-                <div className="flex space-x-2 justify-center">
-                  <Link href={`/editMember/${member.id}`} passHref>
-                    <TbPencil className="text-gray-400 hover:text-blue-600" />
+                <div className="flex gap-1 justify-center">
+                  <Link
+                    className="button-edit-icon"
+                    href={`/editMember/${member.id}`}
+                    passHref
+                  >
+                    <TbPencil />
                   </Link>
-                  <Link href={`/viewMember/${member.id}`} passHref>
-                    <TbEye className="text-gray-400 hover:text-blue-600" />
+                  <Link
+                    className="button-view-icon"
+                    href={`/viewMember/${member.id}`}
+                    passHref
+                  >
+                    <TbEye />
                   </Link>
                   <DeleteButtonWithConfirmation
                     onDelete={() => deleteMember(member.id)}
+                    text=""
+                    className="button-delete-icon"
+                    showButton={authUser && authUser.username === "Admin"}
                   >
                     <TbTrash className="text-gray-400 hover:text-red-600" />
                   </DeleteButtonWithConfirmation>

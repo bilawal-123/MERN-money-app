@@ -18,6 +18,7 @@ import {
   TbUserCircle,
 } from "react-icons/tb";
 import { RiHome6Line, RiUserAddLine } from "react-icons/ri";
+import { IoMdImages } from "react-icons/io";
 
 // If loading a variable font, you don't need to specify the font weight
 const nova = Nova_Square({
@@ -102,6 +103,7 @@ export default function Navbar() {
             <span className="hidden sm:block">Add Customer</span>
           </Link>
           <Link href={"/allImages"} className="nav-link-style">
+            <IoMdImages className="nav-link-icon-style !text-[19px]" />
             <span className="hidden sm:block">Images</span>
           </Link>
 

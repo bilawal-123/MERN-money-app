@@ -42,6 +42,50 @@ const OrdersList = ({ customerId }) => {
     }
   }, [authUser, isLoading]);
 
+  // const fetchOrders = async () => {
+  //   setIsDataFetched(false);
+  //   const q = query(
+  //     collection(db, "orders"),
+  //     where("customerId", "==", customerId)
+  //   );
+  //   try {
+  //     const querySnapshot = await getDocs(q);
+  //     if (querySnapshot.empty) {
+  //       setNoRecordsFound(true);
+  //       return;
+  //     }
+  //     let totalCash = 0;
+  //     let totalCredit = 0;
+  //     querySnapshot.forEach((doc) => {
+  //       totalCash += doc.data().cash || 0;
+  //       totalCredit += doc.data().credit || 0;
+  //     });
+  //     updateBalance(totalCash - totalCredit); // Update the balance context
+  //     const fetchedOrders = querySnapshot.docs
+  //       .map((doc) => ({
+  //         ...doc.data(),
+  //         id: doc.id,
+  //         createdAt: doc.data().createdAt
+  //           ? new Date(doc.data().createdAt.seconds * 1000)
+  //           : new Date(),
+  //       }))
+  //       .sort((a, b) => b.createdAt - a.createdAt);
+  //     fetchedOrders.forEach((order, index) => {
+  //       order.orderNumber = index + 1;
+  //       order.date = order.createdAt.toLocaleDateString("en-GB");
+  //     });
+  //     setOrders(fetchedOrders);
+
+  //     setIsDataFetched(true);
+  //   } catch (error) {
+  //     console.error("Error fetching order:", error);
+  //     setIsDataFetched(true);
+  //     // toast.error(
+  //     //   "Failed to fetch members or calculate balances. Please check permissions."
+  //     // );
+  //   }
+  // };
+
   const fetchOrders = async () => {
     setIsDataFetched(false);
     const q = query(
@@ -54,13 +98,7 @@ const OrdersList = ({ customerId }) => {
         setNoRecordsFound(true);
         return;
       }
-      let totalCash = 0;
-      let totalCredit = 0;
-      querySnapshot.forEach((doc) => {
-        totalCash += doc.data().cash || 0;
-        totalCredit += doc.data().credit || 0;
-      });
-      updateBalance(totalCash - totalCredit); // Update the balance context
+      let entitiesBalance = 0;
       const fetchedOrders = querySnapshot.docs
         .map((doc) => ({
           ...doc.data(),
@@ -69,22 +107,35 @@ const OrdersList = ({ customerId }) => {
             ? new Date(doc.data().createdAt.seconds * 1000)
             : new Date(),
         }))
-        .sort((a, b) => b.createdAt - a.createdAt);
-      fetchedOrders.forEach((order, index) => {
-        order.orderNumber = index + 1;
-        order.date = order.createdAt.toLocaleDateString("en-GB");
-      });
-      setOrders(fetchedOrders);
+        .sort((a, b) => a.createdAt - b.createdAt) // Sort in ascending order by date
+        .map((order, index) => {
+          const cash = order.cash || 0;
+          const credit = order.credit || 0;
+          entitiesBalance += cash - credit;
+          return {
+            ...order,
+            orderNumber: index + 1,
+            date: order.createdAt.toLocaleDateString("en-GB"),
+            entitiesBalance,
+          };
+        });
 
+      // If needed, sort orders back to descending order for display
+      const sortedOrders = fetchedOrders.sort(
+        (a, b) => b.createdAt - a.createdAt
+      );
+
+      setOrders(sortedOrders);
       setIsDataFetched(true);
     } catch (error) {
-      console.error("Error fetching order:", error);
+      console.error("Error fetching orders:", error);
       setIsDataFetched(true);
       // toast.error(
       //   "Failed to fetch members or calculate balances. Please check permissions."
       // );
     }
   };
+
   // Calculate total cash and credit
   const totalCash = useMemo(() => {
     return orders.reduce((acc, order) => acc + (order.cash || 0), 0);
@@ -96,6 +147,11 @@ const OrdersList = ({ customerId }) => {
   useEffect(() => {
     fetchOrders();
   }, [customerId]);
+
+  useEffect(() => {
+    const newBalance = totalCash - totalCredit;
+    updateBalance(newBalance);
+  }, [totalCash, totalCredit, updateBalance]);
 
   const onOrderAdded = () => {
     fetchOrders(); // Re-fetch orders to update the list
@@ -160,17 +216,70 @@ const OrdersList = ({ customerId }) => {
 
   const data = useMemo(() => filteredOrders, [filteredOrders]);
   // const data = useMemo(() => orders, [orders]);
+  // const columns = useMemo(
+  //   () => [
+  //     {
+  //       Header: "#",
+  //       accessor: "date",
+  //       width: 100,
+  //     },
+  //     {
+  //       Header: "آرڈر کی تفصیل",
+  //       accessor: "orderDetails", // Make sure this matches the field name in your Firestore documents
+  //       width: 300,
+  //     },
+  //     {
+  //       Header: "نقدی",
+  //       accessor: "cash",
+  //       width: 80,
+  //     },
+  //     {
+  //       Header: "ادھار",
+  //       accessor: "credit",
+  //       width: 80,
+  //     },
+  //     {
+  //       Header: "اکشین",
+  //       id: "actions",
+  //       width: 50,
+  //       accessor: () => "actions",
+  //       Cell: ({ row }) => (
+  //         <div className="flex items-center gap-1">
+  //           <button
+  //             onClick={() => handleEdit(row.original)}
+  //             className="button-edit-icon"
+  //           >
+  //             <TbPencil className="text-white" />
+  //           </button>
+  //           <DeleteButtonWithConfirmation
+  //             onDelete={() => handleDelete(row.original.id)}
+  //             className="button-delete-icon" // Provide the class for styling
+  //             text="" // Provide text to display alongside the icon
+  //             showButton={authUser && authUser.username === "Admin"}
+  //           />
+
+  //           <ImageUploadModal
+  //             orderId={row.original.id} // Pass the orderId from the currentOrder if it exists
+  //           />
+  //         </div>
+  //       ),
+  //     },
+  //   ],
+  //   []
+  // );
+
   const columns = useMemo(
     () => [
       {
-        Header: "#",
-        accessor: "date",
-        width: 100,
-      },
-      {
         Header: "آرڈر کی تفصیل",
-        accessor: "orderDetails", // Make sure this matches the field name in your Firestore documents
-        width: 300,
+        accessor: "combinedDetails", // Combined column for order details and date
+        Cell: ({ row }) => (
+          <div>
+            <p className="font-bold">{row.original.orderDetails}</p>
+            <p className="text-gray-500">{row.original.date}</p>
+          </div>
+        ),
+        width: 400,
       },
       {
         Header: "نقدی",
@@ -181,6 +290,22 @@ const OrdersList = ({ customerId }) => {
         Header: "ادھار",
         accessor: "credit",
         width: 80,
+      },
+      {
+        Header: " بیلنس ریکارڈ   ",
+        accessor: "entitiesBalance",
+        width: 120,
+        Cell: ({ row }) => (
+          <span
+            className={
+              row.original.entitiesBalance < 0
+                ? "text-red-600 font-bold"
+                : "text-green-600 font-bold"
+            }
+          >
+            {row.original.entitiesBalance}
+          </span>
+        ),
       },
       {
         Header: "اکشین",
@@ -209,7 +334,7 @@ const OrdersList = ({ customerId }) => {
         ),
       },
     ],
-    []
+    [authUser] // Add authUser to the dependencies array
   );
 
   const {
@@ -225,7 +350,7 @@ const OrdersList = ({ customerId }) => {
     setPageSize,
     state: { pageIndex },
   } = useTable(
-    { columns, data, initialState: { pageIndex: 0, pageSize: 20 } },
+    { columns, data, initialState: { pageIndex: 0, pageSize: 10 } },
     useFilters,
     useSortBy,
     usePagination
@@ -240,7 +365,7 @@ const OrdersList = ({ customerId }) => {
   return (
     <>
       <div>
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap">
           <h3 className="text-[16px] font-semibold text-gray-800 flex items-center gap-2">
             موجودہ بیلنس
             <span
@@ -249,9 +374,9 @@ const OrdersList = ({ customerId }) => {
               {balance}
             </span>
           </h3>
-          <div className="flex justify-end gap-2 items-stretch mb-3">
-            <div className="block relative mt-2 sm:mt-0 w-full sm:w-auto">
-              <span className="h-full absolute inset-y-0 left-0 flex items-center pl-2">
+          <div className="flex justify-end mt-3 lg:mt-2  gap-2 items-stretch mb-3">
+            <div className="block relative sm:mt-0 w-full sm:w-auto">
+              <span className="h-full absolute inset-y-0 right-0 flex items-center pr-2">
                 <TbSearch />
               </span>
               <input
@@ -259,10 +384,13 @@ const OrdersList = ({ customerId }) => {
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="آرڈرز تلاش کریں..."
-                className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pl-8 pr-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
+                className="appearance-none rounded-r rounded-l sm:rounded-l-none border border-gray-400 border-b block pr-8 pl-6 py-2 w-full bg-white text-sm placeholder-gray-400 text-gray-700 focus:bg-white focus:placeholder-gray-600 focus:text-gray-700 focus:outline-none"
               />
             </div>
-            <button onClick={() => handleAddOrder()} className="button-style">
+            <button
+              onClick={() => handleAddOrder()}
+              className="button-style min-w-[105px]"
+            >
               <TiPlus />
               آرڈر شامل کریں
             </button>
@@ -322,17 +450,25 @@ const OrdersList = ({ customerId }) => {
                             const balanceValue = parseFloat(cell.value);
                             textColor =
                               balanceValue < 0
-                                ? "text-red-500"
+                                ? "text-red-600"
                                 : balanceValue > 0
-                                ? "text-green-500"
+                                ? "text-green-600"
                                 : "text-black";
+                          }
+                          if (cell.column.id === "credit") {
+                            const balanceValue = parseFloat(cell.value);
+                            textColor = "text-red-600";
+                          }
+                          if (cell.column.id === "cash") {
+                            const balanceValue = parseFloat(cell.value);
+                            textColor = "text-green-600";
                           }
                           return (
                             <td
                               key={index}
                               {...cell.getCellProps()}
                               style={{ width: cell.column.width }}
-                              className={`px-2 py-4 whitespace-nowrap text-sm ${textColor} ${
+                              className={`px-2 py-4 whitespace-nowrap text-sm border-b border-gray-300 ${textColor} ${
                                 ["balance", "cash", "credit"].includes(
                                   cell.column.id
                                 )
@@ -356,7 +492,7 @@ const OrdersList = ({ customerId }) => {
                 </tbody>
                 <tfoot>
                   <tr className="bg-gray-50">
-                    <td></td>
+                    {/* <td></td> */}
                     <td className="px-2 py-4 font-bold text-left text-lg pr-3">
                       کل:
                     </td>
@@ -367,6 +503,7 @@ const OrdersList = ({ customerId }) => {
                       {totalCredit}
                     </td>
                     <td
+                      colSpan={2}
                       className={`px-2 py-4 font-bold ${
                         totalCash - totalCredit < 0
                           ? "text-red-700"
@@ -387,7 +524,7 @@ const OrdersList = ({ customerId }) => {
 
             <div className="flex justify-between items-center px-4 py-3 bg-white border-t border-gray-200 sm:px-6">
               <div className="sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
+                <div className="mb-3">
                   <p className="text-sm text-gray-700">
                     دکھا رہا ہے{" "}
                     <span className="font-bold inline-flex items-center justify-center rounded min-w-7 bg-gray-400 text-white">
@@ -407,18 +544,18 @@ const OrdersList = ({ customerId }) => {
                 <div>
                   <nav className="relative z-0 inline-flex shadow-sm gap-1">
                     <button
-                      onClick={() => previousPage()}
-                      disabled={!canPreviousPage}
-                      className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
-                    >
-                      <FaArrowLeftLong className="h-5 w-5" />
-                    </button>
-                    <button
                       onClick={() => nextPage()}
                       disabled={!canNextPage}
                       className="relative inline-flex items-center px-2 py-2 ml-0 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-r-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
                     >
                       <FaArrowRightLong className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => previousPage()}
+                      disabled={!canPreviousPage}
+                      className="relative inline-flex items-center px-2 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-l-md leading-5 hover:text-gray-400 focus:z-10 focus:outline-none focus:border-blue-300 focus:shadow-outline-blue active:bg-gray-100 active:text-gray-500 transition ease-in-out duration-150"
+                    >
+                      <FaArrowLeftLong className="h-5 w-5" />
                     </button>
                   </nav>
                 </div>

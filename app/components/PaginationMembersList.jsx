@@ -15,10 +15,10 @@ const PaginationMembersList = ({
   return (
     <div className="flex justify-between items-center px-4 py-3  border-t border-b bg-gray-50 border-gray-200 sm:px-6 mt-4">
       <div className="flex sm:items-center sm:justify-start ml-2">
-        <p className="text-sm text-gray-700">
+        {/* <p className="text-sm text-gray-700">
           Showing {pageIndex * pageSize + 1}-{pageIndex * pageSize + dataLength}{" "}
           of {totalPages * pageSize} members
-        </p>
+        </p> */}
       </div>
 
       <div className="relative z-0 inline-flex shadow-sm gap-1 flex-col justify-end items-end">

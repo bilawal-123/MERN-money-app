@@ -30,7 +30,7 @@ select {
   @apply bg-green-500 hover:bg-green-600 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-white rounded  hover:transition-all hover:duration-300;
 }
 .button-outline-icon {
-  @apply border border-gray-700 hover:border-none hover:bg-green-600 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-gray-700 hover:text-white rounded  hover:transition-all hover:duration-300;
+  @apply border border-gray-400 hover:border-none hover:bg-green-600 inline-flex gap-1 items-center justify-center  font-bold h-6 w-6  text-gray-500 hover:text-white rounded  hover:transition-all hover:duration-300;
 }
 .button-black {
   @apply inline-flex gap-1 items-center  bg-gray-500 text-xs font-bold min-h-8 px-3 py-1 text-white rounded hover:bg-gray-600 hover:transition-all hover:duration-300;
